@@ -35,10 +35,23 @@ Then, once per repo:
 | Command | Does |
 |---|---|
 | `/otta:start <issue>` | Seed `.pr-body.md` from a GitHub issue's acceptance criteria |
-| `/otta:build <issue>` | Run the full TDD pipeline as a workflow: build → review → verify → ship |
+| `/otta:dev <issue>` | Run the pipeline **interactively** — the builder can ask you mid-build |
+| `/otta:build <issue>` | Run the pipeline **autonomously** as a workflow (unattended, can't ask) |
 | `/otta:ship` | Run the local gate, then open the PR with the seeded body (manual ship) |
 | `/otta:setup` | Install the pre-push gate hook + onboard the Pulse GitHub App |
 | `/otta:schedule` | Set up a cloud routine that runs the pipeline autonomously (laptop-off) |
+
+## Two ways to run the pipeline
+
+Same four stages, two drivers — pick by whether you want to stay in the loop:
+
+| | `/otta:dev` — interactive | `/otta:build` — autonomous |
+|---|---|---|
+| Driver | the agent in your live session (Task subagents) | a detached [workflow](https://code.claude.com/docs/en/workflows) |
+| Builder can ask you? | **yes** — pauses for your decisions mid-build | no — returns `blocked` with the reason |
+| Best for | real dev, ambiguous specs, "help me decide" | clear specs, overnight, CI-triggered, unattended |
+
+Both run the same `builder → reviewer → qa → devops` stages and open a PR only if the gate + every AC pass.
 
 ## The pipeline (`/otta:build`)
 

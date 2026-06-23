@@ -2,6 +2,10 @@
 
 All notable changes to the Otta plugin. Versions follow the plugin manifest.
 
+## 0.6.0
+
+- **`/otta:dev` — interactive mode.** Runs the same build → review → verify → ship pipeline in your live session (via Task subagents) so the **builder can ask you mid-build** and you can give direction. `/otta:build` stays the autonomous, detached workflow. Two drivers, one engine.
+
 ## 0.5.0
 
 - **Pipeline as a workflow** — `/otta:build <issue>` runs the TDD build → spec-review → verify → ship pipeline as a [dynamic workflow](https://code.claude.com/docs/en/workflows), orchestrating four specialist subagents (`builder`, `reviewer`, `qa`, `devops`). Ships only if the gate passed and every acceptance criterion passed.
