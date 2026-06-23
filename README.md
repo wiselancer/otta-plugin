@@ -3,6 +3,8 @@
 > A Claude Code plugin that turns any agent session into a self-improving software factory.
 
 [![validate](https://github.com/wiselancer/otta-plugin/actions/workflows/validate.yml/badge.svg)](https://github.com/wiselancer/otta-plugin/actions/workflows/validate.yml)
+[![release](https://img.shields.io/github/v/release/wiselancer/otta-plugin?label=release)](https://github.com/wiselancer/otta-plugin/releases)
+[![license](https://img.shields.io/github/license/wiselancer/otta-plugin)](LICENSE)
 &nbsp;·&nbsp; [otta.build](https://otta.build)
 
 Otta runs your work through a disciplined, test-first pipeline — **issue → acceptance criteria → build → review → verify → ship** — driven by specialist subagents, gated so nothing half-done reaches a PR, and **learning from its own outcomes** over time.
