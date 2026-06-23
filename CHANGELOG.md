@@ -2,6 +2,10 @@
 
 All notable changes to the Otta plugin. Versions follow the plugin manifest.
 
+## 0.7.0
+
+- **Clean-base pipeline.** The build stage now branches off the base (default or staging) before implementing, and DevOps verifies the branch contains only this issue's commits before opening the PR — no more PRs dragging unrelated commits from the session's current feature branch.
+
 ## 0.6.0
 
 - **`/otta:dev` — interactive mode.** Runs the same build → review → verify → ship pipeline in your live session (via Task subagents) so the **builder can ask you mid-build** and you can give direction. `/otta:build` stays the autonomous, detached workflow. Two drivers, one engine.

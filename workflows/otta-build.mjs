@@ -39,7 +39,11 @@ const VERIFY_SCHEMA = {
 phase('Build')
 const built = await agent(
   `Implement issue #${issue} test-first.\n` +
-    `FIRST: if .pr-body.md does not exist, seed it from the issue's acceptance criteria by running:\n` +
+    `FIRST establish a CLEAN base — the PR must contain only this change. Fetch origin and cut a fresh branch ` +
+    `off the base (the default branch, or the staging branch if .selfloop.yml names one): ` +
+    `git fetch origin && git switch -c otta/${issue} origin/<base>. Confirm "git log --oneline origin/<base>..HEAD" is empty. ` +
+    `Do NOT build on top of the session's current feature branch.\n` +
+    `THEN: if .pr-body.md does not exist, seed it from the issue's acceptance criteria by running:\n` +
     `  ${SEED} ${issue}\n` +
     `Then read .pr-body.md — each "- [ ] AC" is what you must satisfy. ` +
     `Write the smallest failing test, make it pass, keep changes surgical, and keep .pr-body.md's Verification honest. ` +
