@@ -19,10 +19,18 @@ set -euo pipefail
 WT_ROOT="${OTTA_WORKTREE_DIR:-$HOME/.otta/worktrees}"
 
 repo_slug() {
-  local r
+  local r cg main
   r="$(git config --get remote.origin.url 2>/dev/null || true)"
   r="${r%.git}"; r="${r##*[:/]}"          # last path segment of the remote url
-  [ -n "$r" ] || r="$(basename "$(git rev-parse --show-toplevel)")"
+  if [ -z "$r" ]; then
+    # No remote: fall back to the MAIN worktree's name. Must be cwd-stable —
+    # `git rev-parse --show-toplevel` returns the *linked* worktree's path when
+    # run from inside one (giving a different slug at create vs remove time), so
+    # resolve the common git dir's parent instead.
+    cg="$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P || true)"
+    main="$(dirname "${cg:-$(git rev-parse --show-toplevel)/.git}")"
+    r="$(basename "$main")"
+  fi
   printf '%s' "$r" | tr -cd 'A-Za-z0-9._-'
 }
 
@@ -31,8 +39,16 @@ if [ "${1:-}" = "--remove" ]; then
   SLUG="$(repo_slug)"
   WT="$WT_ROOT/$SLUG-$ISSUE"
   if [ -e "$WT/.git" ]; then
-    git worktree remove --force "$WT"
-    echo "✓ removed worktree $WT" >&2
+    # Resolve to the real path git registered (macOS symlinks e.g. /var →
+    # /private/var, and `git worktree remove` matches on the registered path).
+    RWT="$(cd "$WT" && pwd -P)"
+    # DevOps calls this from *inside* the worktree (it cd'd in to ship). Git
+    # refuses to remove the worktree you're standing in, so step out to the
+    # main worktree (first entry of `git worktree list`) first.
+    MAIN_WT="$(git worktree list --porcelain | sed -n '1s/^worktree //p')"
+    [ -n "$MAIN_WT" ] && cd "$MAIN_WT"
+    git worktree remove --force "$RWT"
+    echo "✓ removed worktree $RWT" >&2
   else
     echo "no worktree at $WT (nothing to remove)" >&2
   fi

@@ -40,8 +40,10 @@ grep -q work "$WT/f.txt" && fail "worktree leaked the feature-branch change"
 WT2="$(bash "$SCRIPT" 42 main)"
 [ "$WT2" = "$WT" ] || fail "second call returned different path: $WT2"
 
-# 5. --remove tears the worktree down
-bash "$SCRIPT" --remove 42 >/dev/null 2>&1
+# 5. --remove tears the worktree down — called from INSIDE the worktree, which
+#    is exactly how DevOps invokes it (it cd'd in to ship). Git refuses to remove
+#    the worktree you're standing in unless the script steps out first.
+( cd "$WT" && bash "$SCRIPT" --remove 42 ) >/dev/null 2>&1 || fail "--remove failed from inside the worktree"
 [ -d "$WT" ] && fail "worktree not removed"
 
 echo "✓ otta-worktree: all 5 checks passed"

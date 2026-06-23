@@ -2,6 +2,10 @@
 
 All notable changes to the Otta plugin. Versions follow the plugin manifest.
 
+## 0.8.1
+
+- **Harden worktree teardown.** `otta-worktree.sh --remove` is invoked by DevOps from *inside* the worktree being removed. Fixed three issues that left a dangling worktree: a cwd-dependent repo slug (now resolved via the main worktree, stable from any linked checkout), `git worktree remove` refusing the current directory (now steps out first), and macOS path resolution (`/var`→`/private/var`). Regression test now exercises removal from inside the worktree.
+
 ## 0.8.0
 
 - **Reviewer/QA verdict capture.** The `reviewer` and `qa` agents now append their verdict to the LEARN ledger (`--source reviewer|qa`), not just the deterministic gate. This records the per-AC compliance + adversarial reasoning — the richest GEPA training signal — at zero LM tokens.
