@@ -46,4 +46,12 @@ WT2="$(bash "$SCRIPT" 42 main)"
 ( cd "$WT" && bash "$SCRIPT" --remove 42 ) >/dev/null 2>&1 || fail "--remove failed from inside the worktree"
 [ -d "$WT" ] && fail "worktree not removed"
 
-echo "✓ otta-worktree: all 5 checks passed"
+# 6. --prune GCs orphans by age: an old worktree is pruned, a fresh one kept.
+OLD="$(bash "$SCRIPT" 100 main)"   # simulate a crashed run's leftover
+NEW="$(bash "$SCRIPT" 200 main)"   # an in-flight run
+touch -t 202001010000 "$OLD" 2>/dev/null || touch -d "2020-01-01" "$OLD"   # backdate the orphan
+bash "$SCRIPT" --prune 24 >/dev/null 2>&1 || fail "--prune errored"
+[ -d "$OLD" ] && fail "--prune did not remove the aged orphan"
+[ -d "$NEW" ] || fail "--prune removed a fresh in-flight worktree"
+
+echo "✓ otta-worktree: all 6 checks passed"

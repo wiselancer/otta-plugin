@@ -55,6 +55,34 @@ if [ "${1:-}" = "--remove" ]; then
   exit 0
 fi
 
+# --prune [hours] — GC orphaned worktrees (a run that died before DevOps tore
+# its worktree down). Age is the safe signal: a pipeline takes minutes, so any
+# worktree older than the threshold is an orphan. Age survives squash-merge
+# branch deletion (which breaks "is the branch merged" checks). An in-flight run
+# (minutes old) is never touched. Default threshold 24h; pass 0 to remove all.
+if [ "${1:-}" = "--prune" ]; then
+  HOURS="${2:-24}"
+  SLUG="$(repo_slug)"
+  NOW="$(date +%s)"
+  MAIN_WT="$(git worktree list --porcelain | sed -n '1s/^worktree //p')"
+  [ -n "$MAIN_WT" ] && cd "$MAIN_WT"
+  removed=0
+  for d in "$WT_ROOT/$SLUG-"*; do
+    [ -e "$d/.git" ] || continue
+    m="$(stat -f %m "$d" 2>/dev/null || stat -c %Y "$d" 2>/dev/null || echo "$NOW")"
+    age_h=$(( (NOW - m) / 3600 ))
+    if [ "$age_h" -ge "$HOURS" ]; then
+      git worktree remove --force "$(cd "$d" && pwd -P)" \
+        && { echo "✓ pruned $d (${age_h}h old)" >&2; removed=$((removed + 1)); }
+    else
+      echo "↻ keeping $d (${age_h}h old < ${HOURS}h)" >&2
+    fi
+  done
+  git worktree prune
+  echo "pruned $removed orphaned worktree(s)" >&2
+  exit 0
+fi
+
 ISSUE="${1:?usage: otta-worktree.sh <issue> [base]}"
 BASE="${2:-}"
 

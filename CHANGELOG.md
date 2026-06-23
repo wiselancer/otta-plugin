@@ -2,6 +2,10 @@
 
 All notable changes to the Otta plugin. Versions follow the plugin manifest.
 
+## 0.8.2
+
+- **`otta-worktree.sh --prune [hours]`.** GC for orphaned worktrees left by a run that died before DevOps tore its worktree down. Removes worktrees in `~/.otta/worktrees` older than the threshold (default 24h). Age is the safe signal — pipelines take minutes, and it survives squash-merge branch deletion; an in-flight run is never touched. Run manually or on a schedule.
+
 ## 0.8.1
 
 - **Harden worktree teardown.** `otta-worktree.sh --remove` is invoked by DevOps from *inside* the worktree being removed. Fixed three issues that left a dangling worktree: a cwd-dependent repo slug (now resolved via the main worktree, stable from any linked checkout), `git worktree remove` refusing the current directory (now steps out first), and macOS path resolution (`/var`→`/private/var`). Regression test now exercises removal from inside the worktree.
