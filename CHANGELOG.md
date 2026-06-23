@@ -2,6 +2,10 @@
 
 All notable changes to the Otta plugin. Versions follow the plugin manifest.
 
+## 0.8.4
+
+- **`learn-from-pulse` skill — close the loop in-session.** A second skill that fires before the builder writes code: it queries Pulse `GET /idea?ref=<idea_ref>` for the idea's history (shipped issues/PRs/versions, escaped defects, prior loop verdicts) and acts on it — guard against a prior escape, pre-empt a prior gate failure, build the next slice not a duplicate. The *online* half of learning (offline GEPA needs data to accrue first). Best-effort: no `OTTA_PULSE_URL` or no data → proceed.
+
 ## 0.8.3
 
 - **Stream loop verdicts to Pulse.** When `OTTA_PULSE_URL` + `OTTA_PULSE_TOKEN` are set, `ledger-append.sh` also pushes each gate/reviewer/qa verdict as a `loop_verdict` event to the Pulse server, so loop grades land next to CI/deploy/defect data (the local ledger jsonl can't be read server-side). Best-effort — time-boxed, failures swallowed, never blocks a gate; `external_id` matches `pulse ingest-ledger` so push + batch-import don't double-count.
