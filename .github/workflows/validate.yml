@@ -1,0 +1,47 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON manifests
+        run: |
+          python3 -c "import json; json.load(open('.claude-plugin/plugin.json'))"
+          python3 -c "import json; json.load(open('.claude-plugin/marketplace.json'))"
+
+      - name: Check every agent has name + description frontmatter
+        run: |
+          fail=0
+          for f in agents/*.md; do
+            grep -q '^name:' "$f" || { echo "::error file=$f::missing name:"; fail=1; }
+            grep -q '^description:' "$f" || { echo "::error file=$f::missing description:"; fail=1; }
+          done
+          exit $fail
+
+      - name: Check every command has description frontmatter
+        run: |
+          fail=0
+          for f in commands/*.md; do
+            grep -q '^description:' "$f" || { echo "::error file=$f::missing description:"; fail=1; }
+          done
+          exit $fail
+
+      - name: Shellcheck scripts
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y shellcheck -qq
+          shellcheck -S warning scripts/*.sh hooks/*.sh || true
+
+      - name: Run ledger-append self-test
+        run: bash tests/ledger-append.test.sh
+
+      - name: Syntax-check the workflow script (async body)
+        run: |
+          { echo "const args={}; async function agent(){}; function phase(){}; function log(){};";
+            echo "async function _(){"; sed -n '11,$p' workflows/otta-build.mjs; echo "}"; } | node --check -
