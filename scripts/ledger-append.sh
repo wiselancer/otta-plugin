@@ -53,3 +53,26 @@ else
 fi
 
 echo "✓ ledger += $EVENT (score=$SCORE) → $DIR/$SLUG.jsonl" >&2
+
+# Optional bridge to a Pulse server: when OTTA_PULSE_URL + OTTA_PULSE_TOKEN are
+# set, also push this verdict as a `loop_verdict` event so it lands in the
+# server-side log next to CI/deploy/defect data (the ledger jsonl is local to
+# THIS machine; the server can't read it). Best-effort: a failed/slow push must
+# never break the gate, so it's time-boxed and its failure is swallowed. The
+# external_id matches `pulse ingest-ledger`'s scheme so the two never double-count.
+if [ -n "${OTTA_PULSE_URL:-}" ] && [ -n "${OTTA_PULSE_TOKEN:-}" ] && command -v jq >/dev/null 2>&1; then
+  BRANCH="$(printf '%s' "$INPUT" | jq -r '.branch // ""' 2>/dev/null || echo "")"
+  EXTID="ledger:${PROJECT}:${TS}:${SOURCE}:${EVENT}:${BRANCH}"
+  BODY="$(jq -cn --arg s otta-ledger --arg t loop_verdict --arg e "$EXTID" \
+        --arg repo "$PROJECT" --arg ts "$TS" --arg vs "$SOURCE" --arg ev "$EVENT" \
+        --argjson score "$SCORE" --arg fb "$FEEDBACK" --argjson input "$INPUT" \
+    '{source:$s, type:$t, externalId:$e, repo:$repo, occurredAt:$ts,
+      payload:{verdict_source:$vs, event:$ev, score:$score, feedback:$fb, input:$input}}')"
+  if curl -fsS -m 5 -X POST "${OTTA_PULSE_URL%/}/event" \
+       -H "x-pulse-token: ${OTTA_PULSE_TOKEN}" -H "content-type: application/json" \
+       -d "$BODY" >/dev/null 2>&1; then
+    echo "  → pushed loop_verdict to Pulse" >&2
+  else
+    echo "  (pulse push skipped — local ledger still written)" >&2
+  fi
+fi

@@ -18,4 +18,13 @@ Set up the Otta shipping loop for this repository.
 
    Installing the App is interactive GitHub consent — you cannot do it for the user. Print the URL from the script and ask the user to open it, pick their account/org, and click Install. Offer to open it for them with `--open` if they're on this machine.
 
-3. Tell the user the loop is ready: `/otta:start <issue>` to begin, `/otta:ship` to gate + open the PR.
+3. (Optional) Stream loop verdicts to a Pulse server so the reviewer/qa grades land next to CI/deploy/defect data. The ledger is written locally regardless; this just also pushes it. Set in the user's shell profile:
+
+   ```bash
+   export OTTA_PULSE_URL="https://pulse.otta.build"
+   export OTTA_PULSE_TOKEN="<the repo's pulse token>"   # = the App webhook secret
+   ```
+
+   The push is best-effort (time-boxed, failures swallowed) so it never blocks a gate. Without these vars, verdicts stay local and can be batch-imported later with `pulse ingest-ledger`.
+
+4. Tell the user the loop is ready: `/otta:start <issue>` to begin, `/otta:ship` to gate + open the PR.

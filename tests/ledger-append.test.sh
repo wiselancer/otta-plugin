@@ -31,4 +31,12 @@ tail -1 "$F" | jq -e '.feedback=="AC1 \"redirect\" passed"' >/dev/null || fail "
 # 5. missing required arg → exit 2
 if OTTA_LEDGER_DIR="$TMP" bash "$SCRIPT" --source x >/dev/null 2>&1; then fail "should exit non-zero on missing args"; fi
 
-echo "✓ ledger-append: all 5 checks passed"
+# 6. an unreachable Pulse push is best-effort: the ledger is still written and
+#    the script still exits 0 (a slow/down server must never break the gate).
+OTTA_LEDGER_DIR="$TMP" OTTA_PULSE_URL="http://127.0.0.1:9" OTTA_PULSE_TOKEN="t" \
+  bash "$SCRIPT" --source qa --event verify --score 1 --feedback ok --project "acme/web" \
+    --input '{"branch":"otta/5"}' >/dev/null 2>&1 \
+  || fail "best-effort pulse push broke the gate (non-zero exit on unreachable server)"
+[ "$(wc -l < "$F" | tr -d ' ')" = "4" ] || fail "ledger not written when pulse push fails"
+
+echo "✓ ledger-append: all 6 checks passed"

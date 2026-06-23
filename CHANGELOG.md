@@ -2,6 +2,10 @@
 
 All notable changes to the Otta plugin. Versions follow the plugin manifest.
 
+## 0.8.3
+
+- **Stream loop verdicts to Pulse.** When `OTTA_PULSE_URL` + `OTTA_PULSE_TOKEN` are set, `ledger-append.sh` also pushes each gate/reviewer/qa verdict as a `loop_verdict` event to the Pulse server, so loop grades land next to CI/deploy/defect data (the local ledger jsonl can't be read server-side). Best-effort — time-boxed, failures swallowed, never blocks a gate; `external_id` matches `pulse ingest-ledger` so push + batch-import don't double-count.
+
 ## 0.8.2
 
 - **`otta-worktree.sh --prune [hours]`.** GC for orphaned worktrees left by a run that died before DevOps tore its worktree down. Removes worktrees in `~/.otta/worktrees` older than the threshold (default 24h). Age is the safe signal — pipelines take minutes, and it survives squash-merge branch deletion; an in-flight run is never touched. Run manually or on a schedule.
