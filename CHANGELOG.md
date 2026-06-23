@@ -2,6 +2,11 @@
 
 All notable changes to the Otta plugin. Versions follow the plugin manifest.
 
+## 0.8.0
+
+- **Reviewer/QA verdict capture.** The `reviewer` and `qa` agents now append their verdict to the LEARN ledger (`--source reviewer|qa`), not just the deterministic gate. This records the per-AC compliance + adversarial reasoning — the richest GEPA training signal — at zero LM tokens.
+- **Worktree isolation.** Each pipeline run executes in a physically separate `git worktree` off the base branch (`scripts/otta-worktree.sh`), so a run can never touch the session's branch or files. Deterministic path → every stage re-derives the same checkout; DevOps tears it down after the PR. Falls back to in-place branch-off-base when worktrees are unavailable. Hardens the v0.7.0 clean-base fix.
+
 ## 0.7.0
 
 - **Clean-base pipeline.** The build stage now branches off the base (default or staging) before implementing, and DevOps verifies the branch contains only this issue's commits before opening the PR — no more PRs dragging unrelated commits from the session's current feature branch.

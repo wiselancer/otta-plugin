@@ -15,6 +15,10 @@ const issue = (args && (args.issue ?? args)) || 'the current issue'
 const root = (args && args.pluginRoot) || '${CLAUDE_PLUGIN_ROOT}'
 const SEED = `bash "${root}/scripts/seed-pr-body.sh"`
 const GATE = `bash "${root}/scripts/otta-gate.sh"`
+const WT = `bash "${root}/scripts/otta-worktree.sh"`
+// Each stage runs fresh in the session cwd, so it re-derives the SAME isolated
+// worktree via the deterministic helper and cd's in before doing anything.
+const ENTER = `Enter the run's isolated worktree first: cd "$(${WT} ${issue})". `
 
 const REVIEW_SCHEMA = {
   type: 'object',
@@ -39,10 +43,11 @@ const VERIFY_SCHEMA = {
 phase('Build')
 const built = await agent(
   `Implement issue #${issue} test-first.\n` +
-    `FIRST establish a CLEAN base — the PR must contain only this change. Fetch origin and cut a fresh branch ` +
-    `off the base (the default branch, or the staging branch if .selfloop.yml names one): ` +
-    `git fetch origin && git switch -c otta/${issue} origin/<base>. Confirm "git log --oneline origin/<base>..HEAD" is empty. ` +
-    `Do NOT build on top of the session's current feature branch.\n` +
+    `FIRST establish an ISOLATED CLEAN base — the PR must contain only this change and must not touch the session's branch. ` +
+    `Create/enter the run's worktree (a separate checkout off the base, on its own otta/${issue} branch):\n` +
+    `  WT="$(${WT} ${issue})" && cd "$WT"\n` +
+    `(pass a base arg to the helper if .selfloop.yml names a staging branch). Confirm "git log --oneline @{u}..HEAD" is empty. ` +
+    `Do NOT build in the session's current checkout.\n` +
     `THEN: if .pr-body.md does not exist, seed it from the issue's acceptance criteria by running:\n` +
     `  ${SEED} ${issue}\n` +
     `Then read .pr-body.md — each "- [ ] AC" is what you must satisfy. ` +
@@ -54,6 +59,7 @@ const built = await agent(
 // 2. SPEC REVIEW — compliance, with one fix loop
 phase('Spec Review')
 let review = await agent(
+  ENTER +
   `Review the implementation for issue #${issue} against the acceptance block in .pr-body.md. ` +
     `For each AC cite the file:line that satisfies it. Flag missing or extra behavior.`,
   { agentType: 'otta:reviewer', label: 'spec-review', phase: 'Spec Review', schema: REVIEW_SCHEMA },
@@ -61,10 +67,12 @@ let review = await agent(
 if (review && !review.compliant) {
   log(`spec review found gaps — sending back to builder`)
   await agent(
+    ENTER +
     `Spec review found gaps for issue #${issue}:\n${review.gaps}\nFix exactly these. Keep changes surgical.`,
     { agentType: 'otta:builder', label: 'build:fix-spec', phase: 'Build' },
   )
   review = await agent(
+    ENTER +
     `Re-review issue #${issue} against .pr-body.md after the fix. Confirm COMPLIANT or list remaining gaps.`,
     { agentType: 'otta:reviewer', label: 'spec-review:2', phase: 'Spec Review', schema: REVIEW_SCHEMA },
   )
@@ -74,6 +82,7 @@ if (review && !review.compliant) {
 //    then adversarial per-AC check
 phase('Verify')
 const verify = await agent(
+  ENTER +
   `For issue #${issue}:\n` +
     `1. Run the Otta gate (it also runs the project gate + captures the verdict to the LEARN ledger):\n` +
     `   ${GATE}\n` +
@@ -87,10 +96,12 @@ const verify = await agent(
 phase('Ship')
 if (verify && verify.gatePassed && verify.allAcsPass) {
   const shipped = await agent(
+    ENTER +
     `Issue #${issue} passed verify. Ship it:\n` +
       `1. Run the Otta gate once more — do not push past a failing gate:\n   ${GATE}\n` +
       `2. Commit, then open the PR with: gh pr create --body-file .pr-body.md --title "<conventional title>"\n` +
       `   Target staging if .selfloop.yml names a staging branch, else main.\n` +
+      `3. After the PR is open, tear down the worktree: ${WT} --remove ${issue}\n` +
       `Return the PR URL.`,
     { agentType: 'otta:devops', label: 'ship', phase: 'Ship' },
   )
