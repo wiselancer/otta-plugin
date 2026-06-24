@@ -18,6 +18,13 @@ issue (with ACs) → /otta:start → /otta:build ─┬─ build  (TDD)
                               every gate verdict → local ledger → self-improvement
 ```
 
+## Requirements
+
+- **Claude Code** (this is a Claude Code plugin)
+- **[`gh`](https://cli.github.com)** authenticated (`gh auth login`) — the seed/gate/ship scripts use it
+- **[`jq`](https://jqlang.github.io/jq/)** — for parsing issue/PR data
+- A **GitHub** repo (the gates assume GitHub + `gh`)
+
 ## Install
 
 ```
@@ -29,8 +36,10 @@ issue (with ACs) → /otta:start → /otta:build ─┬─ build  (TDD)
 Then, once per repo:
 
 ```
-/otta:setup        # installs the pre-push gate hook + onboards the Otta Pulse GitHub App
+/otta:setup        # installs the pre-push gate hook (Pulse onboarding is optional — see below)
 ```
+
+The core loop (build → gate → PR → ship + local grade capture) works with **no server**. Otta Pulse — the DORA / idea→version dashboard — is optional and needs your own Pulse instance; see [Otta Pulse (optional)](#otta-pulse-optional).
 
 ## Commands
 
